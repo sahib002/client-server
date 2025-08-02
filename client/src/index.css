@@ -1,30 +1,3 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-}
-
-.firebaseui-idp-button {
-  background-color: #4CAF50 !important;
-  color: white !important;
-  border-radius: 8px !important;
-  font-size: 16px !important;
-}
-
-.firebaseui-title {
-  font-family: 'Inter', sans-serif;
-  color: #222;
-  font-size: 24px;
-}
-
-.firebaseui-card-content {
-  padding: 40px !important;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

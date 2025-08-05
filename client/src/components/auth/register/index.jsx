@@ -18,14 +18,24 @@ const Register = () => {
     const onSubmit = async (e) => {
         e.preventDefault()
         if(!isRegistering) {
+            if (password !== confirmPassword) {
+                setErrorMessage('Passwords do not match')
+                return
+            }
             setIsRegistering(true)
-            await doCreateUserWithEmailAndPassword(email, password)
+            try {
+                await doCreateUserWithEmailAndPassword(email, password)
+                setErrorMessage('')
+            } catch (error) {
+                setErrorMessage(error.message)
+                setIsRegistering(false)
+            }
         }
     }
 
     return (
         <>
-            {userLoggedIn && (<Navigate to={'/home'} replace={true} />)}
+            {userLoggedIn && (<Navigate to={'/dashboard'} replace={true} />)}
 
             <main className="w-full h-screen flex self-center place-content-center place-items-center">
                 <div className="w-96 text-gray-600 space-y-5 p-4 shadow-xl border rounded-xl">

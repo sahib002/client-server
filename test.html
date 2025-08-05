@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Task Fast Statistics Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .stats { display: flex; gap: 20px; margin: 20px 0; }
+        .stat-card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; }
+        .tasks { margin-top: 20px; }
+        .task { border: 1px solid #ddd; padding: 10px; margin: 5px 0; border-radius: 4px; }
+        button { margin: 5px; padding: 8px 16px; }
+    </style>
+</head>
+<body>
+    <h1>Task Fast - Statistics Update Test</h1>
+    
+    <div class="stats">
+        <div class="stat-card">
+            <div id="total-tasks">Total: 0</div>
+        </div>
+        <div class="stat-card">
+            <div id="completed-tasks">Completed: 0</div>
+        </div>
+        <div class="stat-card">
+            <div id="pending-tasks">Pending: 0</div>
+        </div>
+        <div class="stat-card">
+            <div id="progress">Progress: 0%</div>
+        </div>
+    </div>
+
+    <div>
+        <button onclick="addTestTask()">Add Test Task</button>
+        <button onclick="toggleFirstTask()">Toggle First Task</button>
+        <button onclick="deleteFirstTask()">Delete First Task</button>
+        <button onclick="refreshTasks()">Refresh Tasks</button>
+        <span style="color: blue; font-size: 12px; margin-left: 10px;">
+            📊 Stats calculated from same data source | Last updated: <span id="last-updated"></span>
+        </span>
+    </div>
+
+    <div class="tasks" id="tasks-container">
+        Loading tasks...
+    </div>
+
+    <script>
+        let tasks = [];
+
+        async function fetchTasks() {
+            try {
+                const response = await fetch('http://localhost:5000/api/tasks');
+                const data = await response.json();
+                tasks = data.tasks || [];
+                updateDisplay();
+            } catch (error) {
+                console.error('Error fetching tasks:', error);
+                document.getElementById('tasks-container').innerHTML = 'Error loading tasks';
+            }
+        }
+
+        function updateDisplay() {
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.completed).length;
+            const pending = total - completed;
+            const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+            document.getElementById('total-tasks').textContent = `Total: ${total}`;
+            document.getElementById('completed-tasks').textContent = `Completed: ${completed}`;
+            document.getElementById('pending-tasks').textContent = `Pending: ${pending}`;
+            document.getElementById('progress').textContent = `Progress: ${progress}%`;
+            document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = tasks.map(task => 
+                `<div class="task">
+                    <strong>${task.title}</strong> - ${task.priority} priority - 
+                    ${task.completed ? '✅ Completed' : '⏳ Pending'}
+                </div>`
+            ).join('');
+        }
+
+        async function addTestTask() {
+            try {
+                const response = await fetch('http://localhost:5000/api/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: `Test Task ${Date.now()}`,
+                        description: 'Generated test task',
+                        priority: 'medium',
+                        dueDate: new Date().toISOString(),
+                        owner: 'temp-user'
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Task added successfully');
+                    await fetchTasks(); // This should update statistics immediately
+                }
+            } catch (error) {
+                console.error('Error adding task:', error);
+            }
+        }
+
+        async function toggleFirstTask() {
+            if (tasks.length === 0) return;
+            
+            const firstTask = tasks[0];
+            try {
+                const response = await fetch(`http://localhost:5000/api/tasks/${firstTask._id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ...firstTask,
+                        completed: !firstTask.completed
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Task toggled successfully');
+                    await fetchTasks(); // This should update statistics immediately
+                }
+            } catch (error) {
+                console.error('Error toggling task:', error);
+            }
+        }
+
+        async function deleteFirstTask() {
+            if (tasks.length === 0) return;
+            
+            const firstTask = tasks[0];
+            try {
+                const response = await fetch(`http://localhost:5000/api/tasks/${firstTask._id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Task deleted successfully');
+                    await fetchTasks(); // This should update statistics immediately
+                }
+            } catch (error) {
+                console.error('Error deleting task:', error);
+            }
+        }
+
+        async function refreshTasks() {
+            await fetchTasks();
+        }
+
+        // Initialize
+        fetchTasks();
+    </script>
+</body>
+</html>

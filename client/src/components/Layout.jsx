@@ -2,18 +2,20 @@ import React, { useState, useEffect, useCallback, useMemo } from "react"
 import { Outlet } from "react-router-dom"
 import { Circle, TrendingUp, Clock, Zap } from "lucide-react"
 import Navbar from "./Navbar"
+import AgentChat from "./AgentChat"
 import { useAuth } from "../contexts/authContext"
 import useTasks from "../hooks/useTasks"
 
 const Layout = ({ children }) => {
   const { currentUser } = useAuth()
-  const { tasks, loading, refreshTasks } = useTasks() // Use shared hook
+  const userEmail = currentUser?.email || currentUser?.displayName || "temp-user"
+  const { tasks, loading, refreshTasks } = useTasks(userEmail) // Use shared hook with user email
   const [error, setError] = useState(null)
 
   // Debug: track when tasks change
   useEffect(() => {
-    console.log('Layout tasks from useTasks hook:', tasks.length, 'tasks')
-  }, [tasks])
+    console.log('Layout tasks from useTasks hook for user:', userEmail, 'Total tasks:', tasks.length)
+  }, [tasks, userEmail])
 
   const contextValue = useMemo(() => ({
     tasks,
@@ -60,19 +62,19 @@ const Layout = ({ children }) => {
   )
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
     </div>
   )
 
   if (error) return (
-    <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
-      <div className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 max-w-md">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6 flex items-center justify-center">
+      <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 p-4 rounded-xl border border-red-100 dark:border-red-900 max-w-md">
         <p className="font-medium mb-2">Error loading tasks</p>
         <p className="text-sm">{error}</p>
         <button
           onClick={refreshTasks}
-          className="mt-4 px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors"
+          className="mt-4 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-200 rounded-lg text-sm font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
         >
           Try Again
         </button>
@@ -81,7 +83,7 @@ const Layout = ({ children }) => {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Navbar hover trigger area at top of screen */}
       <div className="fixed top-0 left-0 right-0 h-4 bg-transparent z-40 hover:bg-gray-100/10"></div>
       
@@ -94,11 +96,11 @@ const Layout = ({ children }) => {
           </div>
 
           <div className="xl:col-span-1 space-y-4 sm:space-y-6">
-            <div className="bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-purple-100">
-              <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-gray-800 flex items-center gap-2">
+            <div className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-5 shadow-sm border border-purple-100 dark:border-gray-800">
+              <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-purple-500" />
                 Task Statistics
-                <span className="text-xs text-gray-400 font-normal ml-auto">
+                <span className="text-xs text-gray-400 dark:text-gray-500 font-normal ml-auto">
                   {tasks.length > 0 ? new Date().toLocaleTimeString() : 'Loading...'}
                 </span>
               </h3>
@@ -126,21 +128,21 @@ const Layout = ({ children }) => {
                 />
               </div>
 
-              <hr className="my-3 sm:my-4 border-purple-100" />
+              <hr className="my-3 sm:my-4 border-purple-100 dark:border-gray-800" />
 
               <div className="space-y-2 sm:space-y-3">
-                <div className="flex items-center justify-between text-gray-700">
+                <div className="flex items-center justify-between text-gray-700 dark:text-gray-200">
                   <span className="text-xs sm:text-sm font-medium flex items-center gap-1.5">
                     <Circle className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-purple-500 fill-purple-500" />
                     Task Progress
                   </span>
-                  <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 sm:px-2 rounded-full">
+                  <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-200 px-1.5 py-0.5 sm:px-2 rounded-full">
                     {stats.completedTasks}/{stats.totalCount}
                   </span>
                 </div>
                 <div className="relative pt-1">
                   <div className="flex gap-1.5 items-center">
-                    <div className="flex-1 h-2 sm:h-3 bg-purple-100 rounded-full overflow-hidden">
+                    <div className="flex-1 h-2 sm:h-3 bg-purple-100 dark:bg-gray-800 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-fuchsia-500 to-purple-600 transition-all duration-500"
                         style={{ width: `${stats.completionPercentage}%` }}
@@ -153,6 +155,7 @@ const Layout = ({ children }) => {
           </div>
         </div>
       </div>
+  <AgentChat />
     </div>
   )
 }

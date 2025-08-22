@@ -1,26 +1,71 @@
 // components/TaskModal.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { PlusCircle, X, Save, Calendar, AlignLeft, Flag, CheckCircle } from 'lucide-react';
+import { PlusCircle, X, Save, Calendar, AlignLeft, Flag, CheckCircle, Clock } from 'lucide-react';
 import { baseControlClasses, priorityStyles, DEFAULT_TASK } from '../assets/dummy';
+import TimePicker from './TimePicker';
+import { useAuth } from '../contexts/authContext';
 
 const API_BASE = 'http://localhost:5000/api/tasks';
 
 const TaskModal = ({ isOpen, onClose, taskToEdit, onSave, onLogout }) => {
+  const { currentUser } = useAuth();
+  const userEmail = currentUser?.email || currentUser?.displayName || "temp-user";
+  
   const [taskData, setTaskData] = useState(DEFAULT_TASK);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const today = new Date().toISOString().split('T')[0];
 
+  // Helper to add minutes to an HH:MM string
+  const addMinutes = (timeStr, mins) => {
+    if (!timeStr) return '';
+    const [hh, mm] = timeStr.split(':').map(Number);
+    const base = new Date(2000, 0, 1, hh, mm, 0, 0);
+    const out = new Date(base.getTime() + mins * 60000);
+    const H = String(out.getHours()).padStart(2, '0');
+    const M = String(out.getMinutes()).padStart(2, '0');
+    return `${H}:${M}`;
+  };
+
   useEffect(() => {
     if (!isOpen) return;
     if (taskToEdit) {
       const normalized = taskToEdit.completed === 'Yes' || taskToEdit.completed === true ? 'Yes' : 'No';
+      
+      // Handle time extraction more carefully
+      let startTimeStr = '';
+      let endTimeStr = '';
+      
+      if (taskToEdit.startTime) {
+        const startDate = new Date(taskToEdit.startTime);
+        if (!isNaN(startDate.getTime())) {
+          startTimeStr = startDate.toTimeString().slice(0, 5); // HH:MM format
+        }
+      }
+      
+      if (taskToEdit.endTime) {
+        const endDate = new Date(taskToEdit.endTime);
+        if (!isNaN(endDate.getTime())) {
+          endTimeStr = endDate.toTimeString().slice(0, 5); // HH:MM format
+        }
+      }
+      
+      console.log('🔄 Editing task:', {
+        title: taskToEdit.title,
+        startTime: taskToEdit.startTime,
+        endTime: taskToEdit.endTime,
+        extractedStart: startTimeStr,
+        extractedEnd: endTimeStr
+      });
+      
       setTaskData({
         ...DEFAULT_TASK,
         title: taskToEdit.title || '',
         description: taskToEdit.description || '',
         priority: taskToEdit.priority || 'low',
         dueDate: taskToEdit.dueDate?.split('T')[0] || '',
+        startTime: startTimeStr,
+        endTime: endTimeStr,
         completed: normalized,
         id: taskToEdit._id,
       });
@@ -47,18 +92,61 @@ const TaskModal = ({ isOpen, onClose, taskToEdit, onSave, onLogout }) => {
       setError('Due date cannot be in the past.');
       return;
     }
+    
+    // Validate time fields if provided
+    if (taskData.startTime && taskData.endTime && taskData.startTime >= taskData.endTime) {
+      setError('End time must be after start time.');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     try {
       const isEdit = Boolean(taskData.id);
       const url = isEdit ? `${API_BASE}/${taskData.id}` : `${API_BASE}`;
+      
+      // Prepare data with proper date/time formatting
+      const submitData = {
+        ...taskData,
+        completed: taskData.completed === 'Yes',
+        userEmail: userEmail
+      };
+      
+      console.log('📝 Form data before conversion:', {
+        startTime: taskData.startTime,
+        endTime: taskData.endTime,
+        dueDate: taskData.dueDate
+      });
+      
+      // Convert time fields to full datetime if provided and not empty
+      if (taskData.startTime && taskData.startTime.trim() !== '' && taskData.dueDate) {
+        const startDateTime = `${taskData.dueDate}T${taskData.startTime}:00`;
+        const startDateObj = new Date(startDateTime);
+        submitData.startTime = startDateObj.toISOString();
+        console.log('✅ Created startTime:', submitData.startTime, 'from:', startDateTime);
+      } else {
+        // Explicitly remove startTime if not provided
+        delete submitData.startTime;
+        console.log('❌ No startTime provided');
+      }
+      
+      if (taskData.endTime && taskData.endTime.trim() !== '' && taskData.dueDate) {
+        const endDateTime = `${taskData.dueDate}T${taskData.endTime}:00`;
+        const endDateObj = new Date(endDateTime);
+        submitData.endTime = endDateObj.toISOString();
+        console.log('✅ Created endTime:', submitData.endTime, 'from:', endDateTime);
+      } else {
+        // Explicitly remove endTime if not provided
+        delete submitData.endTime;
+        console.log('❌ No endTime provided');
+      }
+      
+      console.log('📤 Final submit data:', submitData);
+      
       const resp = await fetch(url, {
         method: isEdit ? 'PUT' : 'POST',
         headers: getHeaders(),
-        body: JSON.stringify({
-          ...taskData,
-          completed: taskData.completed === 'Yes'
-        }),
+        body: JSON.stringify(submitData),
       });
       if (!resp.ok) {
         const err = await resp.json();
@@ -73,7 +161,7 @@ const TaskModal = ({ isOpen, onClose, taskToEdit, onSave, onLogout }) => {
     } finally {
       setLoading(false);
     }
-  }, [taskData, today, getHeaders, onSave, onClose]);
+  }, [taskData, today, getHeaders, onSave, onClose, userEmail]);
 
   if (!isOpen) return null;
 
@@ -126,6 +214,47 @@ const TaskModal = ({ isOpen, onClose, taskToEdit, onSave, onLogout }) => {
               </label>
               <input type="date" name="dueDate" required min={today} value={taskData.dueDate}
                 onChange={handleChange} className={baseControlClasses} />
+            </div>
+          </div>
+          
+          {/* Time Fields */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <Clock className="w-4 h-4 text-purple-500" /> Start Time (Optional)
+              </label>
+              <TimePicker
+                id="start-time"
+                name="startTime"
+                value={taskData.startTime}
+                onChange={(val) => setTaskData(prev => {
+                  const next = { ...prev, startTime: val };
+                  if (val) {
+                    // If no end time or end is <= start, suggest +60 minutes
+                    if (!prev.endTime || prev.endTime <= val) {
+                      next.endTime = addMinutes(val, 60);
+                    }
+                  }
+                  return next;
+                })}
+                className={baseControlClasses}
+                placeholder="Select start time"
+                step={15}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <Clock className="w-4 h-4 text-purple-500" /> End Time (Optional)
+              </label>
+              <TimePicker
+                id="end-time"
+                name="endTime"
+                value={taskData.endTime}
+                onChange={(val) => setTaskData(prev => ({ ...prev, endTime: val }))}
+                className={baseControlClasses}
+                placeholder="Select end time"
+                step={15}
+              />
             </div>
           </div>
           <div>

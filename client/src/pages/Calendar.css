@@ -1,0 +1,57 @@
+/* Calendar Component Styles */
+.calendar-container .fc {
+  font-family: 'Inter', sans-serif;
+}
+
+.calendar-container .fc-toolbar {
+  margin-bottom: 1.5rem;
+}
+
+.calendar-container .fc-toolbar-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.calendar-container .fc-button {
+  background-color: #6366f1 !important;
+  border-color: #6366f1 !important;
+  color: white !important;
+  border-radius: 0.375rem !important;
+  padding: 0.375rem 0.75rem !important;
+  font-weight: 500 !important;
+  transition: all 0.2s !important;
+}
+
+.calendar-container .fc-button:hover {
+  background-color: #4f46e5 !important;
+  border-color: #4f46e5 !important;
+}
+
+.calendar-container .fc-button:disabled {
+  background-color: #9ca3af !important;
+  border-color: #9ca3af !important;
+}
+
+.calendar-container .fc-button-active {
+  background-color: #4338ca !important;
+  border-color: #4338ca !important;
+}
+
+.calendar-container .fc-day-today {
+  background-color: #f0f9ff !important;
+}
+
+.calendar-container .fc-event {
+  border-radius: 0.25rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+}
+
+.calendar-container .fc-timegrid-event {
+  margin: 1px !important;
+}
+
+.calendar-container .fc-timegrid-slot {
+  height: 2em !important;
+}

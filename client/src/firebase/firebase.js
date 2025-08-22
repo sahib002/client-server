@@ -1,8 +1,7 @@
 // client/src/firebase.js
 
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getAnalytics } from "firebase/analytics";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
 
 // Your Firebase config
 const firebaseConfig = {
@@ -17,7 +16,11 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 
 // ✅ Add and export auth
 export const auth = getAuth(app);
+
+// For development - if you want to use Firebase emulator
+// if (process.env.NODE_ENV === 'development' && !auth._delegate._authCredentials) {
+//   connectAuthEmulator(auth, "http://localhost:9099");
+// }

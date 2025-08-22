@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
 import { auth } from "../../firebase/firebase";
-// import { GoogleAuthProvider } from "firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
+import { LocalAuth } from "../../firebase/localAuth";
 
 const AuthContext = React.createContext();
 
@@ -14,35 +14,57 @@ export function AuthProvider({ children }) {
   const [userLoggedIn, setUserLoggedIn] = useState(false);
   const [isEmailUser, setIsEmailUser] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [useLocalAuth, setUseLocalAuth] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, initializeUser);
-    return unsubscribe;
+    // Check if we have a local user first (this is instant)
+    const localUser = LocalAuth.getCurrentUser();
+    if (localUser) {
+      setCurrentUser(localUser);
+      setUserLoggedIn(true);
+      setIsEmailUser(true);
+      setUseLocalAuth(true);
+      setLoading(false);
+      return;
+    }
+
+    // Set a timeout for Firebase auth to prevent hanging
+    const authTimeout = setTimeout(() => {
+      console.log("Firebase auth timeout - switching to local auth");
+      setUseLocalAuth(true);
+      setLoading(false);
+    }, 3000); // 3 second timeout
+
+    // Try Firebase auth with timeout protection
+    const unsubscribe = onAuthStateChanged(auth, 
+      (user) => {
+        clearTimeout(authTimeout);
+        initializeUser(user);
+      }, 
+      (error) => {
+        clearTimeout(authTimeout);
+        console.error("Firebase auth error:", error);
+        setUseLocalAuth(true);
+        setLoading(false);
+      }
+    );
+    
+    return () => {
+      clearTimeout(authTimeout);
+      unsubscribe();
+    };
   }, []);
 
   async function initializeUser(user) {
     if (user) {
-
       setCurrentUser({ ...user });
-
-      // check if provider is email and password login
-      const isEmail = user.providerData.some(
-        (provider) => provider.providerId === "password"
-      );
-      setIsEmailUser(isEmail);
-
-      // check if the auth provider is google or not
-    //   const isGoogle = user.providerData.some(
-    //     (provider) => provider.providerId === GoogleAuthProvider.PROVIDER_ID
-    //   );
-    //   setIsGoogleUser(isGoogle);
-
+      setIsEmailUser(true);
       setUserLoggedIn(true);
+      setUseLocalAuth(false);
     } else {
       setCurrentUser(null);
       setUserLoggedIn(false);
     }
-
     setLoading(false);
   }
 
@@ -50,12 +72,14 @@ export function AuthProvider({ children }) {
     userLoggedIn,
     isEmailUser,
     currentUser,
-    setCurrentUser
+    setCurrentUser,
+    useLocalAuth,
+    setUserLoggedIn
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }

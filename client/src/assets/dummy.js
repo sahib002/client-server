@@ -46,6 +46,8 @@ export const DEFAULT_TASK = {
   description: '',
   priority: 'low',
   dueDate: '',
+  startTime: '',
+  endTime: '',
   completed: 'No',
   id: null
 }

@@ -6,7 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Login from './components/auth/login';
 import Register from './components/auth/register';
 import Home from './components/home';
-import Header from './components/header';
+import Calendar from './components/Calendar';
 import './index.css';
 
 const AppRoutes = () => {
@@ -30,6 +30,10 @@ const AppRoutes = () => {
       element: userLoggedIn ? <Dashboard /> : <Login />,
     },
     {
+      path: "/calendar",
+      element: userLoggedIn ? <Calendar /> : <Login />,
+    },
+    {
       path: "/",
       element: userLoggedIn ? <Dashboard /> : <Login />,
     },
@@ -50,10 +54,7 @@ const AppRoutes = () => {
   }
   
   return (
-    <div>
-      <Header />
-      <div className="w-full h-screen flex flex-col">{routesElement}</div>
-    </div>
+    <div className="w-full min-h-screen flex flex-col">{routesElement}</div>
   );
 };
 

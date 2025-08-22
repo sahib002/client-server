@@ -17,6 +17,12 @@ const taskSchema = new mongoose.Schema({
     dueDate: {
         type: Date
     },
+    startTime: {
+        type: Date
+    },
+    endTime: {
+        type: Date
+    },
     owner: {
         type: String,
         default: "temp-user"
